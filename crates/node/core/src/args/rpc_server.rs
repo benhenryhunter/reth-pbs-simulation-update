@@ -197,6 +197,10 @@ pub struct RpcServerArgs {
     /// Gas price oracle configuration.
     #[command(flatten)]
     pub gas_price_oracle: GasPriceOracleArgs,
+
+    /// Require the proposer to not be a block beneficiary.
+    #[arg(long = "rpc.disable-proposer-as-beneficiary")]
+    pub rpc_disable_proposer_as_beneficiary: bool,
 }
 
 impl RpcServerArgs {
@@ -332,6 +336,7 @@ impl Default for RpcServerArgs {
             rpc_state_cache: RpcStateCacheArgs::default(),
             rpc_proof_permits: constants::DEFAULT_PROOF_PERMITS,
             builder_disallow: Default::default(),
+            rpc_disable_proposer_as_beneficiary: false,
         }
     }
 }

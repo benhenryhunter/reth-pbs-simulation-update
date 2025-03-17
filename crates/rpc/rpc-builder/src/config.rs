@@ -109,6 +109,7 @@ impl RethRpcServerConfig for RpcServerArgs {
         ValidationApiConfig {
             disallow: self.builder_disallow.clone().unwrap_or_default(),
             validation_window: self.rpc_eth_proof_window,
+            disable_proposer_as_beneficiary: self.rpc_disable_proposer_as_beneficiary,
         }
     }
 

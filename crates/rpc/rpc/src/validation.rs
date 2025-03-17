@@ -59,7 +59,8 @@ where
             >,
         >,
     ) -> Self {
-        let ValidationApiConfig { disallow, validation_window } = config;
+        let ValidationApiConfig { disallow, validation_window, disable_proposer_as_beneficiary } =
+            config;
 
         let inner = Arc::new(ValidationApiInner {
             provider,
@@ -71,6 +72,7 @@ where
             cached_state: Default::default(),
             task_spawner,
             metrics: Default::default(),
+            disable_proposer_as_beneficiary,
         });
 
         inner.metrics.disallow_size.set(inner.disallow.len() as f64);
@@ -325,6 +327,13 @@ where
             }
         }
 
+        if self.disable_proposer_as_beneficiary {
+            // proposer is not allowed to be the block beneficiary
+            if block.header().beneficiary() == message.proposer_fee_recipient {
+                return Err(ValidationApiError::ProposerPayment)
+            }
+        }
+
         Ok(())
     }
 
@@ -490,6 +499,9 @@ pub struct ValidationApiInner<Provider, E: BlockExecutorProvider> {
     task_spawner: Box<dyn TaskSpawner>,
     /// Validation metrics
     metrics: ValidationMetrics,
+
+    /// Should require validator cannot be beneficiary
+    disable_proposer_as_beneficiary: bool,
 }
 
 impl<Provider, E: BlockExecutorProvider> fmt::Debug for ValidationApiInner<Provider, E> {
@@ -505,16 +517,26 @@ pub struct ValidationApiConfig {
     pub disallow: HashSet<Address>,
     /// The maximum block distance - parent to latest - allowed for validation
     pub validation_window: u64,
+
+    /// Should require validator cannot be beneficiary
+    pub disable_proposer_as_beneficiary: bool,
 }
 
 impl ValidationApiConfig {
     /// Default validation blocks window of 3 blocks
     pub const DEFAULT_VALIDATION_WINDOW: u64 = 3;
+
+    /// Default value for `disable_proposer_as_beneficiary`
+    pub const DISABLE_PROPOSER_AS_BENEFICIARY: bool = false;
 }
 
 impl Default for ValidationApiConfig {
     fn default() -> Self {
-        Self { disallow: Default::default(), validation_window: Self::DEFAULT_VALIDATION_WINDOW }
+        Self {
+            disallow: Default::default(),
+            validation_window: Self::DEFAULT_VALIDATION_WINDOW,
+            disable_proposer_as_beneficiary: Self::DISABLE_PROPOSER_AS_BENEFICIARY,
+        }
     }
 }
 
